@@ -1,9 +1,10 @@
 import logging
 from http import HTTPStatus
-from typing import Dict, Optional, Type, TypeVar
+from typing import Dict, Optional, Type, TypeVar, cast
 
 import httpx
 
+from gigachat._pydantic import is_basemodel_type, to_strict_json_schema
 from gigachat.context import (
     agent_id_cvar,
     authorization_cvar,
@@ -86,3 +87,30 @@ def build_response(response: httpx.Response, model_class: Type[T]) -> T:
         raise AuthenticationError(response.url, response.status_code, response.content, response.headers)
     else:
         raise ResponseError(response.url, response.status_code, response.content, response.headers)
+
+def type_to_response_format_param(
+    response_format: type,
+):
+    if isinstance(response_format, dict):
+        return response_format
+
+    # type checkers don't narrow the negation of a `TypeGuard` as it isn't
+    # a safe default behaviour but we know that at this point the `response_format`
+    # can only be a `type`
+    response_format = cast(type, response_format)
+
+    json_schema_type: type[BaseModel] | None = None
+
+    if is_basemodel_type(response_format):
+        name = response_format.__name__
+        json_schema_type = response_format
+    else:
+        raise TypeError(f"Unsupported response_format type - {response_format}")
+
+    return {
+        "type": "json_schema",
+        "schema": to_strict_json_schema(json_schema_type),
+        "name": name,
+        "description": None,
+        "strict": True,
+        }

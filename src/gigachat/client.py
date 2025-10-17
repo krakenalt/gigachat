@@ -1,5 +1,6 @@
 import logging
 import ssl
+from copy import copy
 from functools import cached_property
 from typing import (
     Any,
@@ -146,6 +147,8 @@ class _BaseClient:
         key_file_password: Optional[str] = None,
         ssl_context: Optional[ssl.SSLContext] = None,
         flags: Optional[List[str]] = None,
+        http_sync_client: Optional[httpx.Client] = None,
+        http_async_client: Optional[httpx.AsyncClient] = None,
         **_unknown_kwargs: Any,
     ) -> None:
         if _unknown_kwargs:
@@ -173,6 +176,8 @@ class _BaseClient:
         }
         config = {k: v for k, v in kwargs.items() if v is not None}
         self._settings = Settings(**config)
+        self._http_sync_client = http_sync_client
+        self._http_async_client = http_async_client
         if self._settings.access_token:
             self._access_token = AccessToken(access_token=self._settings.access_token, expires_at=0)
 
@@ -209,11 +214,27 @@ class GigaChatSyncClient(_BaseClient):
 
     @cached_property
     def _client(self) -> httpx.Client:
-        return httpx.Client(**_get_kwargs(self._settings))
+        if isinstance(self._http_sync_client, httpx.Client):
+            client = copy(self._http_sync_client)
+            if self._http_sync_client.base_url == "":
+                client.base_url = self._settings.base_url
+        elif isinstance(self._http_sync_client, httpx.AsyncClient):
+            raise TypeError("Expected sync client but got async client")
+        else:
+            client = httpx.Client(**_get_kwargs(self._settings))
+
+        return client
 
     @cached_property
     def _auth_client(self) -> httpx.Client:
-        return httpx.Client(**_get_auth_kwargs(self._settings))
+        if isinstance(self._http_sync_client, httpx.Client):
+            auth_client = self._http_sync_client
+        elif isinstance(self._http_sync_client, httpx.AsyncClient):
+            raise TypeError("Expected sync client but got async client")
+        else:
+            auth_client = httpx.Client(**_get_auth_kwargs(self._settings))
+
+        return auth_client
 
     def close(self) -> None:
         self._client.close()
@@ -365,11 +386,27 @@ class GigaChatAsyncClient(_BaseClient):
 
     @cached_property
     def _aclient(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(**_get_kwargs(self._settings))
+        if isinstance(self._http_async_client, httpx.AsyncClient):
+            client = copy(self._http_async_client)
+            if self._http_async_client.base_url == "":
+                client.base_url = self._settings.base_url
+        elif isinstance(self._http_async_client, httpx.Client):
+            raise TypeError("Expected async client but got sync client")
+        else:
+            client = httpx.AsyncClient(**_get_kwargs(self._settings))
+
+        return client
 
     @cached_property
     def _auth_aclient(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(**_get_auth_kwargs(self._settings))
+        if isinstance(self._http_async_client, httpx.AsyncClient):
+            auth_client = self._http_async_client
+        elif isinstance(self._http_async_client, httpx.Client):
+            raise TypeError("Expected async client but got sync client")
+        else:
+            auth_client = httpx.AsyncClient(**_get_auth_kwargs(self._settings))
+
+        return auth_client
 
     async def aclose(self) -> None:
         await self._aclient.aclose()
