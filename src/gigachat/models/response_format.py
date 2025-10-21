@@ -7,6 +7,7 @@ class ResponseFormatText(BaseModel):
     type_: Literal["text"] = Field(..., alias="type")
     """The type of response format being defined. Always `text`."""
 
+
 class ResponseFormatJSONSchema(BaseModel):
     type_: Literal["json_schema"] = Field(..., alias="type")
     """The type of response format being defined. Always `json_schema`."""
@@ -38,5 +39,6 @@ class ResponseFormatJSONSchema(BaseModel):
     learn more, read the
     [Structured Outputs guide](https://platform.openai.com/docs/guides/structured-outputs).
     """
+
 
 ResponseFormat = Union[ResponseFormatJSONSchema, ResponseFormatText]

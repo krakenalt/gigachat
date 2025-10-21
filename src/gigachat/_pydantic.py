@@ -20,7 +20,7 @@ def to_strict_json_schema(model: type[pydantic.BaseModel] | pydantic.TypeAdapter
     return _ensure_strict_json_schema(schema, path=(), root=schema)
 
 
-def _ensure_strict_json_schema( #noqa C901
+def _ensure_strict_json_schema(  # noqa C901
     json_schema: object,
     *,
     path: tuple[str, ...],

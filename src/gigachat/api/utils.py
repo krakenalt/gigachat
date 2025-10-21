@@ -88,6 +88,7 @@ def build_response(response: httpx.Response, model_class: Type[T]) -> T:
     else:
         raise ResponseError(response.url, response.status_code, response.content, response.headers)
 
+
 def type_to_response_format_param(
     response_format: type,
 ):
@@ -113,4 +114,4 @@ def type_to_response_format_param(
         "name": name,
         "description": None,
         "strict": True,
-        }
+    }
