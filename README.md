@@ -93,10 +93,9 @@ with GigaChat(credentials="<your_authorization_key>") as client:
 Use the dedicated `v2/chat/completions` helpers when you need the newer structured `messages[]` response format.
 
 ```python
-from gigachat import GigaChat
-from gigachat.models import ChatV2
+from gigachat import GigaChat, StructuredChatRequest
 
-chat = ChatV2(
+chat = StructuredChatRequest(
     messages=[
         {
             "role": "user",
@@ -106,11 +105,11 @@ chat = ChatV2(
 )
 
 with GigaChat(credentials="<your_authorization_key>") as client:
-    response = client.chat_v2(chat)
+    response = client.structured_chat(chat)
     print(response.messages[0].content[0].text)
 ```
 
-For structured JSON output in v2, use `chat_parse_v2()` (or `achat_parse_v2()` for async) to set `model_options.response_format`, call the API, and validate the first text response in one step.
+For structured JSON output, use `parse_structured_chat()` (or `aparse_structured_chat()` for async) to set `model_options.response_format`, call the API, and validate the first text response in one step. The older `chat_parse_v2()` and `achat_parse_v2()` helpers remain available as compatibility aliases.
 
 > **Migration note:** v1 returns `choices[0].message`, while v2 returns top-level `messages[]`.
 > The SDK derives the default v2 endpoint from a `base_url` ending with `/api/v1`. For custom deployments, set `chat_v2_url_cvar`.
@@ -176,8 +175,14 @@ with GigaChat() as client:
 Enable the model to call functions (tools):
 
 ```python
-from gigachat import GigaChat
-from gigachat.models import Chat, Messages, MessagesRole, Function, FunctionParameters
+from gigachat import (
+    Function,
+    FunctionParameters,
+    GigaChat,
+    LegacyChatRequest,
+    LegacyMessage,
+    LegacyMessageRole,
+)
 
 weather_function = Function(
     name="get_weather",
@@ -199,8 +204,8 @@ weather_function = Function(
     ),
 )
 
-chat = Chat(
-    messages=[Messages(role=MessagesRole.USER, content="What's the weather in Tokyo?")],
+chat = LegacyChatRequest(
+    messages=[LegacyMessage(role=LegacyMessageRole.USER, content="What's the weather in Tokyo?")],
     functions=[weather_function],
 )
 
@@ -231,8 +236,7 @@ import json
 from typing import List
 from pydantic import BaseModel
 
-from gigachat import GigaChat
-from gigachat.models import Chat, Messages, MessagesRole
+from gigachat import GigaChat, LegacyChatRequest, LegacyMessage, LegacyMessageRole
 
 
 class MathAnswer(BaseModel):
@@ -240,9 +244,9 @@ class MathAnswer(BaseModel):
     final_answer: str
 
 
-chat = Chat(
+chat = LegacyChatRequest(
     messages=[
-        Messages(role=MessagesRole.USER, content="Solve 8x + 7 = -23. Explain step by step."),
+        LegacyMessage(role=LegacyMessageRole.USER, content="Solve 8x + 7 = -23. Explain step by step."),
     ],
     response_format={
         "type": "json_schema",
@@ -262,9 +266,9 @@ You can also pass a raw `dict` JSON Schema instead of a Pydantic model — in th
 
 Pydantic schemas may include `anyOf` / `oneOf` (for example, when using `Union[...]`). This is supported by the API, so you can model multiple valid JSON shapes and validate the output accordingly.
 
-#### Automatic parsing with `chat_parse()`
+#### Automatic parsing with `parse_legacy_chat()`
 
-Instead of calling `json.loads` + `model_validate` manually, use `chat_parse()` (or `achat_parse()` for async).
+Instead of calling `json.loads` + `model_validate` manually, use `parse_legacy_chat()` (or `aparse_legacy_chat()` for async).
 It sets `response_format` from the model, calls the API, parses and validates the response in one step:
 
 ```python
@@ -280,7 +284,7 @@ class MathAnswer(BaseModel):
 
 
 with GigaChat() as client:
-    completion, parsed = client.chat_parse(
+    completion, parsed = client.parse_legacy_chat(
         "Solve 8x + 7 = -23. Explain step by step.",
         response_model=MathAnswer,
         strict=True,
@@ -289,7 +293,7 @@ with GigaChat() as client:
     print(parsed.final_answer)
 ```
 
-`chat_parse` raises specific exceptions when parsing fails:
+`parse_legacy_chat` raises specific exceptions when parsing fails:
 
 | Exception | When |
 |-----------|------|

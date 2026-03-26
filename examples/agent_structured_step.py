@@ -21,8 +21,7 @@ from typing import Literal, Union
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from gigachat import GigaChat
-from gigachat.models import Messages, MessagesRole
+from gigachat import GigaChat, LegacyChatRequest, LegacyMessage, LegacyMessageRole
 
 load_dotenv()
 # -- Action models (what the agent can do) ---------------------------------
@@ -79,19 +78,17 @@ def execute_calculate(expr: str) -> str:
 
 def run_agent(question: str, *, model: str = "GigaChat-2-Max", max_steps: int = 10) -> str:
     """Run the agent loop and return the final answer."""
-    messages: list[Messages] = [
-        Messages(role=MessagesRole.SYSTEM, content=SYSTEM_PROMPT),
-        Messages(role=MessagesRole.USER, content=question),
+    messages: list[LegacyMessage] = [
+        LegacyMessage(role=LegacyMessageRole.SYSTEM, content=SYSTEM_PROMPT),
+        LegacyMessage(role=LegacyMessageRole.USER, content=question),
     ]
 
     with GigaChat(model=model) as client:
         for step in range(1, max_steps + 1):
             print(f"--- Step {step} ---")
 
-            from gigachat.models import Chat
-
-            chat = Chat(model=model, messages=messages)
-            completion, parsed = client.chat_parse(chat, response_model=AgentStep)
+            chat = LegacyChatRequest(model=model, messages=messages)
+            completion, parsed = client.parse_legacy_chat(chat, response_model=AgentStep)
 
             if isinstance(parsed, FinalAnswer):
                 print(f"Final answer: {parsed.answer}")
@@ -103,14 +100,14 @@ def run_agent(question: str, *, model: str = "GigaChat-2-Max", max_steps: int = 
                 print(f"Calculate: {parsed.expression} = {result}")
 
                 messages.append(
-                    Messages(
-                        role=MessagesRole.ASSISTANT,
+                    LegacyMessage(
+                        role=LegacyMessageRole.ASSISTANT,
                         content=json.dumps(parsed.model_dump(), ensure_ascii=False),
                     )
                 )
                 messages.append(
-                    Messages(
-                        role=MessagesRole.USER,
+                    LegacyMessage(
+                        role=LegacyMessageRole.USER,
                         content=f"Result of calculation: {result}",
                     )
                 )

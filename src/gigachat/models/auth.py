@@ -1,17 +1,3 @@
-from pydantic import Field, SecretStr
+from gigachat.schemas.auth import *  # noqa: F403
 
-from gigachat.models.base import APIResponse
-
-
-class AccessToken(APIResponse):
-    """Access token information."""
-
-    access_token: SecretStr = Field(description="Generated Access Token.")
-    expires_at: int = Field(description="Unix timestamp (in milliseconds) when the Access Token expires.")
-
-
-class Token(APIResponse):
-    """Raw token response."""
-
-    tok: SecretStr = Field(description="Generated Access Token.")
-    exp: int = Field(description="Unix timestamp (in milliseconds) when the Access Token expires.")
+__all__ = [name for name in globals() if not name.startswith("_")]

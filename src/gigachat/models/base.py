@@ -1,15 +1,3 @@
-from typing import Dict, Optional
+from gigachat.schemas.base import *  # noqa: F403
 
-from pydantic import BaseModel, Field
-
-
-class XHeadersMixin(BaseModel):
-    """Mixin adding X-Headers to API responses."""
-
-    x_headers: Optional[Dict[str, Optional[str]]] = Field(default=None, description="Service headers")
-
-
-class APIResponse(XHeadersMixin):
-    """Base class for all API response models."""
-
-    pass
+__all__ = [name for name in globals() if not name.startswith("_")]

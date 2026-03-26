@@ -17,8 +17,8 @@ from typing import List
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from gigachat import GigaChat
-from gigachat.models import Chat, Messages, MessagesRole
+from gigachat import GigaChat, LegacyChatRequest, LegacyMessage, LegacyMessageRole
+
 load_dotenv()
 # -- Pydantic model describing the desired output shape --------------------
 
@@ -33,8 +33,8 @@ PROMPT = "Solve the equation 8x + 7 = -23. Explain step by step in English."
 
 def example_raw_dict_schema() -> None:
     """1. Pass a raw dict JSON Schema (sent as-is, no normalization)."""
-    chat = Chat(
-        messages=[Messages(role=MessagesRole.USER, content=PROMPT)],
+    chat = LegacyChatRequest(
+        messages=[LegacyMessage(role=LegacyMessageRole.USER, content=PROMPT)],
         response_format={
             "type": "json_schema",
             "schema": {
@@ -61,8 +61,8 @@ def example_raw_dict_schema() -> None:
 
 def example_pydantic_model_schema() -> None:
     """2. Pass a Pydantic BaseModel — SDK generates + normalizes JSON Schema."""
-    chat = Chat(
-        messages=[Messages(role=MessagesRole.USER, content=PROMPT)],
+    chat = LegacyChatRequest(
+        messages=[LegacyMessage(role=LegacyMessageRole.USER, content=PROMPT)],
         response_format={
             "type": "json_schema",
             "schema": MathAnswer,
@@ -82,15 +82,15 @@ def example_pydantic_model_schema() -> None:
 
 
 def example_chat_parse() -> None:
-    """3. Use chat_parse() — one call to send, parse, and validate."""
+    """3. Use parse_legacy_chat() — one call to send, parse, and validate."""
     with GigaChat() as client:
-        completion, parsed = client.chat_parse(
+        completion, parsed = client.parse_legacy_chat(
             PROMPT,
             response_model=MathAnswer,
             strict=True,
         )
 
-    print("=== chat_parse() helper ===")
+    print("=== parse_legacy_chat() helper ===")
     print("Steps:", parsed.steps)
     print("Answer:", parsed.final_answer)
     print(f"Tokens used: {completion.usage.total_tokens}")
